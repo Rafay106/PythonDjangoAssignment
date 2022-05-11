@@ -27,7 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -133,6 +132,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-CORS_ORIGIN_ALLOW_ALL = True
+# To change default User model to Custom UserModel
 AUTH_USER_MODEL = 'AuthController.UserModel'
+# To allow all front end ports to access our app
+CORS_ORIGIN_ALLOW_ALL = True
+# To allow front end to get cookies
+CORS_ALLOW_CREDENTIALS = True

@@ -1,57 +1,60 @@
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.parsers import JSONParser
-from django.http.response import JsonResponse
-from django.contrib.auth import authenticate, login, logout
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import exceptions
+import jwt, datetime
 
-from . serializers import RegisterSerializer
+from . serializers import UserSerializer
 from . models import UserModel
 
 # Create your views here.
 
-@csrf_exempt
-def loginUser(request):
-    if request.user.is_authenticated:
-        return JsonResponse("You are loggined", safe=False)
+class RegisterUser(APIView):
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-    if request.method == 'POST':
-        login_data = JSONParser().parse(request)
-        e_name = login_data['email']
-        p_word = login_data['password']
-        print(f'\nEmail: {e_name}\nPassword: {p_word}')
+
+class LoginUser(APIView):
+    def post(self, request):
+        email = request.data['email']
+        password = request.data['password']
+        try:
+            user = UserModel.objects.get(email=email)
+        except:
+            raise exceptions.AuthenticationFailed("User Not Found!")
         
-        try:
-            user = UserModel.objects.get(email=e_name)
-        except:
-            return JsonResponse("User not found", safe=False)
-        user = authenticate(email=e_name, password=p_word)
-        print(f'User: {user}\n')
-        if user is not None:
-            login(request, user)
-            return JsonResponse("Successfully Logined", safe=False)
+        if not user.check_password(password):
+            raise exceptions.AuthenticationFailed("Incorrect Password!")
+            
+        payload = {
+            'first_name': user.first_name,
+            'last_name' : user.last_name,
+            'email'     : user.email,
+            'is_active' : user.is_active,
+            'role'      : user.role,
+            'exp'       : datetime.datetime.utcnow() + datetime.timedelta(minutes=600),
+            'iat'       : datetime.datetime.utcnow()
+        }
+        token = jwt.encode(payload, 'secret', algorithm='HS256')
+        response = Response()
+        response.set_cookie(key='jwt', value=token, httponly=True, max_age=36000)
+        response.data = {
+            "jwt" : token
+        }
+        return response
+
+class LogoutUser(APIView):
+    def post(self, request):
+        if request.COOKIES.get('jwt') is not None:
+            response = Response()
+            response.delete_cookie('jwt')
+            response.data = {
+                "message" : "Successfully logged out."
+            }
+            return response
         else:
-            return JsonResponse("Username or Password does not exist!", safe=False)
-    return JsonResponse("Error", safe=False)
-
-def logoutUser(request):
-    if request.user.is_anonymous:
-        return JsonResponse("Already logged out", safe=False)
-    if request.method == 'GET':
-        try:
-            logout(request)
-            return JsonResponse("Succesfully Logout", safe=False)
-        except:
-            return JsonResponse("Logout failed", safe=False)
-    return JsonResponse("Error", safe=False)
-
-@csrf_exempt
-def registerUser(request):
-    if not request.user.is_anonymous and request.user.role == 'A':
-        if request.method == 'POST':
-            login_data = JSONParser().parse(request)
-            login_serializer = RegisterSerializer(data=login_data)
-            if login_serializer.is_valid():
-                login_serializer.save()
-                return JsonResponse("User Created Successfully", safe=False)
-            return JsonResponse("Failed to create user", safe=False)
-        return JsonResponse("Error", safe=False)
-    return JsonResponse("Unauthorized, Only admin can resgister new users.", safe=False)
+            return Response(
+                {"message" : "Already logged out"}
+            )
