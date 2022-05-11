@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import exceptions
+from rest_framework import exceptions as ex
 import jwt, datetime
 
 from . serializers import UserSerializer
@@ -23,10 +23,10 @@ class LoginUser(APIView):
         try:
             user = UserModel.objects.get(email=email)
         except:
-            raise exceptions.AuthenticationFailed("User Not Found!")
+            raise ex.AuthenticationFailed("User Not Found!")
         
         if not user.check_password(password):
-            raise exceptions.AuthenticationFailed("Incorrect Password!")
+            raise ex.AuthenticationFailed("Incorrect Password!")
             
         payload = {
             'first_name': user.first_name,
