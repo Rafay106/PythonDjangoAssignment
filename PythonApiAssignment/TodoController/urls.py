@@ -2,7 +2,7 @@ from django.urls import re_path
 from . views import *
 
 urlpatterns = [
-    re_path(r'^$', UrlsApi),
+    re_path(r'^$', UrlsApi.as_view()),
 
     re_path(r'^getall$', TodoListApi.as_view()),
     

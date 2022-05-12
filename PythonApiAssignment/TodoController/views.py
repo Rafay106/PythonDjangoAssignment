@@ -11,8 +11,8 @@ from . serializers import TodoSerializer
 
 # Create your views here.
 
-def UrlsApi(request):
-    if request.method == 'GET':
+class UrlsApi(APIView):
+    def get(self, request):
         context = {
             "POST   - login"       : "Login user",
             "GET    - logout"      : "Login user",
@@ -23,7 +23,7 @@ def UrlsApi(request):
             "POST   - create"      : "Create new todo item",
             "DELETE - delete/<id>" : "Delete a todo item",
         }
-    return Response(context)
+        return Response(context)
 
 #Get all the todo items
 class TodoListApi(APIView):
