@@ -1,1 +1,1 @@
-web: gunicorn PythonApiAssignment.wsgi --log-file -
+web: gunicorn PythonApiAssignment.PythonApiAssignment.wsgi --log-file -
